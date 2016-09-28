@@ -170,7 +170,6 @@ if ($page['type'] == PAGE_TYPE_HTML) {
 		}
 		$pageHeader->addJsFile($path);
 	}
-
 	$pageHeader->display();
 ?>
 <body>

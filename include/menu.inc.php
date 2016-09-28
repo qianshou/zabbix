@@ -302,6 +302,21 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 				]
 			]
 		],
+        'collector' => [
+            'label' => _('错误收集接口'),
+            'user_type' => USER_TYPE_SUPER_ADMIN,
+            'default_page_id' => 0,
+            'pages' => [
+                [
+                    'url' => 'errorList.php',
+                    'label' => _('错误信息列表')
+                ],
+                [
+                    'url' => 'alertSeting.php',
+                    'label' => _('错误报警设置')
+                ]
+            ]
+        ],
 		'login' => [
 			'label' => _('Login'),
 			'user_type' => 0,
