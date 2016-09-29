@@ -308,12 +308,24 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
             'default_page_id' => 0,
             'pages' => [
                 [
-                    'url' => 'errorList.php',
+                    'url' => 'hfErrorList.php',
                     'label' => _('错误信息列表')
                 ],
                 [
-                    'url' => 'alertSeting.php',
+                    'url' => 'hfAlertSeting.php',
                     'label' => _('错误报警设置')
+                ],
+                [
+                    'url' => 'hfManageContacts.php',
+                    'label' => _('报警联系人设置')
+                ],
+                [
+                    'url' => 'hfManageWebsite.php',
+                    'label' => _('错误信息站点设置')
+                ],
+                [
+                    'url' => 'hfAjaxFunction.php',
+                    'label' => _('&nbsp;')
                 ]
             ]
         ],
