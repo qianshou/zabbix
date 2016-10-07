@@ -118,19 +118,13 @@ if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'delContact'){
     exit;
 }
 
-//更新联系人
-if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'addContact'){
-    if(isset($_REQUEST['id']) && !empty($_REQUEST['id'])){
-        $name = $_REQUEST['id'];
+//添加收集站
+if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'addWebsite'){
+    if(isset($_REQUEST['client_id']) && !empty($_REQUEST['client_id'])){
+        $client_id = $_REQUEST['client_id'];
     }
-    if(isset($_REQUEST['name']) && !empty($_REQUEST['name'])){
-        $name = $_REQUEST['name'];
-    }
-    if(isset($_REQUEST['email']) && !empty($_REQUEST['email'])){
-        $email = $_REQUEST['email'];
-    }
-    if(isset($_REQUEST['phone']) && !empty($_REQUEST['phone'])){
-        $sms = $_REQUEST['phone'];
+    if(isset($_REQUEST['client_name']) && !empty($_REQUEST['client_name'])){
+        $client_name = $_REQUEST['client_name'];
     }
     if(isset($_REQUEST['comment']) && !empty($_REQUEST['comment'])){
         $comment = $_REQUEST['comment'];
@@ -140,9 +134,32 @@ if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'addContact'){
         writeText('Connect Error:'.$mysqli->connect_error);
     }
     $mysqli->set_charset('utf8');
-    $prepare_sql = "UPDATE `hf_manageContacts` SET `name`=? AND `email`=? AND `sms`=? AND `comment`=? WHERE `id`=?";
+    $prepare_sql = "INSERT INTO `hf_manageWebsite`(`client_id`,`client_name`,`comment`) VALUES (?,?,?)";
     $mysqli_stmt = $mysqli->prepare($prepare_sql);
-    $mysqli_stmt->bind_param("ssssi",$name,$email,$sms,$commet,$id);
+    $mysqli_stmt->bind_param("sss",$client_name,$client_name,$comment);
+    if($mysqli_stmt->execute()){
+        echo $mysqli_stmt->insert_id;
+    }
+    $mysqli_stmt->free_result();
+    $mysqli->close();
+    exit;
+}
+
+//删除收集站
+if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'delWebsite'){
+    if(isset($_REQUEST['id']) && !empty($_REQUEST['id'])){
+        $id = $_REQUEST['id'];
+    }else{
+        exit;
+    }
+    $mysqli = new mysqli("127.0.0.1","root","root","zabbix");
+    if($mysqli->connect_errno){ //连接成功errno应该为0
+        writeText('Connect Error:'.$mysqli->connect_error);
+    }
+    $mysqli->set_charset('utf8');
+    $prepare_sql = "DELETE FROM `hf_manageWebsite` WHERE `id`=?";
+    $mysqli_stmt = $mysqli->prepare($prepare_sql);
+    $mysqli_stmt->bind_param("i",$id);
     if($mysqli_stmt->execute()){
         echo "ok";
     }
@@ -150,3 +167,36 @@ if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'addContact'){
     $mysqli->close();
     exit;
 }
+
+//更新联系人
+//if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'addContact'){
+//    if(isset($_REQUEST['id']) && !empty($_REQUEST['id'])){
+//        $name = $_REQUEST['id'];
+//    }
+//    if(isset($_REQUEST['name']) && !empty($_REQUEST['name'])){
+//        $name = $_REQUEST['name'];
+//    }
+//    if(isset($_REQUEST['email']) && !empty($_REQUEST['email'])){
+//        $email = $_REQUEST['email'];
+//    }
+//    if(isset($_REQUEST['phone']) && !empty($_REQUEST['phone'])){
+//        $sms = $_REQUEST['phone'];
+//    }
+//    if(isset($_REQUEST['comment']) && !empty($_REQUEST['comment'])){
+//        $comment = $_REQUEST['comment'];
+//    }
+//    $mysqli = new mysqli("127.0.0.1","root","root","zabbix");
+//    if($mysqli->connect_errno){ //连接成功errno应该为0
+//        writeText('Connect Error:'.$mysqli->connect_error);
+//    }
+//    $mysqli->set_charset('utf8');
+//    $prepare_sql = "UPDATE `hf_manageContacts` SET `name`=? AND `email`=? AND `sms`=? AND `comment`=? WHERE `id`=?";
+//    $mysqli_stmt = $mysqli->prepare($prepare_sql);
+//    $mysqli_stmt->bind_param("ssssi",$name,$email,$sms,$commet,$id);
+//    if($mysqli_stmt->execute()){
+//        echo "ok";
+//    }
+//    $mysqli_stmt->free_result();
+//    $mysqli->close();
+//    exit;
+//}

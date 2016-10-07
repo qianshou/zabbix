@@ -321,7 +321,7 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
                 ],
                 [
                     'url' => 'hfManageWebsite.php',
-                    'label' => _('错误信息站点设置')
+                    'label' => _('收集站设置')
                 ],
                 [
                     'url' => 'hfAjaxFunction.php',

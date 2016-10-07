@@ -63,18 +63,22 @@ $mysqli->close();
             <th>邮箱</th>
             <th>电话</th>
             <th>备注</th>
+<!--            <th>修改</th>-->
             <th>删除</th>
         </tr>
         </thead>
         <tbody>
         <?php
+            $id = 0;
             foreach ($rows as $item){
-                echo "<tr>";
-                echo "<td>".$item['id']."</td>";
-                echo "<td>".$item['name']."</td>";
-                echo "<td>".$item['email']."</td>";
-                echo "<td>".$item['sms']."</td>";
-                echo "<td>".$item['comment']."</td>";
+                $id++;
+                echo "<tr id='".$item['id']."'>";
+                echo "<td class='id'>".$id."</td>";
+                echo "<td class='name'>".$item['name']."</td>";
+                echo "<td class='email'>".$item['email']."</td>";
+                echo "<td class='sms'>".$item['sms']."</td>";
+                echo "<td class='comment'>".$item['comment']."</td>";
+//                echo "<td><a href='javascript:updateContact(".$item['id'].")'>修改</a></td>";
                 echo "<td><a href='javascript:delContact(".$item['id'].")'>删除</a></td>";
                 echo "</tr>";
             }
@@ -113,64 +117,73 @@ $mysqli->close();
         </ul>
      </div>
 </div>
-    <script  type="text/javascript">
-        //显示添加联系人表单
-        function addContact() {
-            var addLink = document.getElementById("addLink");
-            addLink.hide();
-            var contactList = document.getElementById("contactList");
-            contactList.hide();
-            var addForm = document.getElementById("addForm");
-            addForm.show();
+<script  type="text/javascript">
+    //显示添加联系人表单
+    function addContact() {
+        var addLink = document.getElementById("addLink");
+        addLink.hide();
+        var contactList = document.getElementById("contactList");
+        contactList.hide();
+        var addForm = document.getElementById("addForm");
+        addForm.show();
+    }
+    //执行添加联系人操作
+    function addSubmit() {
+        var name = document.getElementById("name").value;
+        var email = document.getElementById("email").value;
+        var phone = document.getElementById("phone").value;
+        var comment = document.getElementById("comment").value;
+        var param = "cmd=addContact&name="+name+"&email="+email+"&phone="+phone+"&comment="+comment;
+        ajaxFun(param);
+    }
+    //显示修改联系人表单
+    function updateContact(id) {
+        var addLink = document.getElementById("addLink");
+        addLink.hide();
+        var contactList = document.getElementById("contactList");
+        contactList.hide();
+        var addForm = document.getElementById("addForm");
+        addForm.show();
+    }
+    //删除联系人操作
+    function delContact(id) {
+        var param = "cmd=delContact&id="+id;
+        ajaxFun(param);
+    }
+    //取消添加/修改联系人表单
+    function cancelForm() {
+        var addForm = document.getElementById("addForm");
+        addForm.hide();
+        var addLink = document.getElementById("addLink");
+        addLink.show();
+        var contactList = document.getElementById("contactList");
+        contactList.show();
+    }
+    //执行ajax请求
+    function ajaxFun(param) {
+        //发送ajax请求
+        var xmlhttp;
+        var responseText;
+        if (window.XMLHttpRequest)
+        {// code for IE7+, Firefox, Chrome, Opera, Safari
+            xmlhttp=new XMLHttpRequest();
         }
-        //执行添加联系人操作
-        function addSubmit() {
-            var name = document.getElementById("name").value;
-            var email = document.getElementById("email").value;
-            var phone = document.getElementById("phone").value;
-            var comment = document.getElementById("comment").value;
-            var param = "cmd=addContact&name="+name+"&email="+email+"&phone="+phone+"&comment="+comment;
-            ajaxFun(param);
+        else
+        {// code for IE6, IE5
+            xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
         }
-        //删除联系人操作
-        function delContact(id) {
-            var param = "cmd=delContact&id="+id;
-            ajaxFun(param);
-        }
-        //取消添加/修改联系人表单
-        function cancelForm() {
-            var addForm = document.getElementById("addForm");
-            addForm.hide();
-            var addLink = document.getElementById("addLink");
-            addLink.show();
-            var contactList = document.getElementById("contactList");
-            contactList.show();
-        }
-        //执行ajax请求
-        function ajaxFun(param) {
-            //发送ajax请求
-            var xmlhttp;
-            var responseText;
-            if (window.XMLHttpRequest)
-            {// code for IE7+, Firefox, Chrome, Opera, Safari
-                xmlhttp=new XMLHttpRequest();
-            }
-            else
-            {// code for IE6, IE5
-                xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-            }
-            xmlhttp.onreadystatechange=function()
+        xmlhttp.onreadystatechange=function()
+        {
+            if (xmlhttp.readyState==4 && xmlhttp.status==200)
             {
-                if (xmlhttp.readyState==4 && xmlhttp.status==200)
-                {
-                    responseText=xmlhttp.responseText;
-                    location.reload();
-                }
+                responseText=xmlhttp.responseText;
+                location.reload();
             }
-            xmlhttp.open("POST","hfAjaxFunction.php",true);
-            xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-            xmlhttp.send(param);
         }
-    </script>
+        xmlhttp.open("POST","hfAjaxFunction.php",true);
+        xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+        xmlhttp.send(param);
+    }
+</script>
 <?php
 require_once dirname(__FILE__).'/include/page_footer.php';
