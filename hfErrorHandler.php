@@ -6,6 +6,7 @@
  * Time: 14:54
  */
 require_once 'mailto.php';
+require_once dirname(__FILE__).'/include/mysqli.inc.php';
 $errorList = array();
 //从队列取出错误信息
 $redis = new Redis();
@@ -26,7 +27,7 @@ function handleFunction($redis, $chan, $msg){
     $report_level = array('fatal');
     if(in_array($level,$report_level)){
         //获取邮件收件人，短信收件人
-        $mysqli = new mysqli("127.0.0.1","root","root","zabbix");
+        $mysqli = new Zmysqli();
         if($mysqli->connect_errno){ //连接成功errno应该为0
             writeText('Connect Error:'.$mysqli->connect_error);
         }
@@ -52,7 +53,7 @@ function handleFunction($redis, $chan, $msg){
         writeText("send message to ".$smsto);
     }
     //写入mysql数据库
-    $mysqli = new mysqli("127.0.0.1","root","root","zabbix");
+    $mysqli = new Zmysqli();
     if($mysqli->connect_errno){ //连接成功errno应该为0
         writeText('Connect Error:'.$mysqli->connect_error);
     }

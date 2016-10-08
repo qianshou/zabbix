@@ -50,7 +50,7 @@ $mysqli->close();
 ?>
 <div class="header-title table">
     <div class="cell">
-        <h1>错误信息站点设置</h1>
+        <h1>收集站设置</h1>
     </div>
 </div>
 <p id="addLink"><a href="javascript:addContact()">添加收集站</a></p>
@@ -89,11 +89,11 @@ $mysqli->close();
         <ul class="table-forms" id="userFormList">
             <li>
                 <div class="table-forms-td-left"><label for="client_id">收集站编号</label></div>
-                <div class="table-forms-td-right"><input type="text" id="client_id" name="client_id" value="" maxlength="255" style="width: 300px;" autofocus="autofocus"></div>
+                <div class="table-forms-td-right"><input type="text" id="client_id" name="client_id" value="" maxlength="255" style="width: 300px;" autofocus="autofocus">&nbsp;&nbsp;必填</div>
             </li>
             <li>
                 <div class="table-forms-td-left"><label for="client_name">收集站名称</label></div>
-                <div class="table-forms-td-right"><input type="text" id="client_name" name="client_name" value="" maxlength="255" style="width: 300px;" autofocus="autofocus"></div>
+                <div class="table-forms-td-right"><input type="text" id="client_name" name="client_name" value="" maxlength="255" style="width: 300px;" autofocus="autofocus">&nbsp;&nbsp;必填</div>
             </li>
             <li>
                 <div class="table-forms-td-left"><label for="comment">备注</label></div>
@@ -126,6 +126,11 @@ $mysqli->close();
         var client_id = document.getElementById("client_id").value;
         var client_name = document.getElementById("client_name").value;
         var comment = document.getElementById("comment").value;
+        //检查必填字段
+        if(client_id == '' || client_name == ''){
+            alert("请检查必填字段是否已填写");
+            return false;
+        }
         var param = "cmd=addWebsite&client_id="+client_id+"&client_name="+client_name+"&comment="+comment;
         ajaxFun(param);
     }
@@ -160,9 +165,20 @@ $mysqli->close();
         {
             if (xmlhttp.readyState==4 && xmlhttp.status==200)
             {
-                responseText=xmlhttp.responseText;
-                location.reload();
-                console.log(responseText);
+                var responseNum=xmlhttp.responseText;
+                if(responseNum == 1){
+                    location.reload();
+                    return;
+                }
+                if(responseNum == -1){
+                    alert("请检查必填字段是否已填写");
+                    return;
+                }
+                if(responseNum == -2){
+                    alert("收集站名称重复，请修改后重试");
+                    return;
+                }
+                alert(responseNum);
             }
         }
         xmlhttp.open("POST","hfAjaxFunction.php",true);

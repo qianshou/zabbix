@@ -5,6 +5,7 @@
  * Date: 2016/9/27
  * Time: 9:31
  */
+require_once dirname(__FILE__).'/include/mysqli.inc.php';
 header("charset='utf-8'");
 extract($_REQUEST,EXTR_SKIP);
 //验证参数

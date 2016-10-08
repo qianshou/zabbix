@@ -25,7 +25,7 @@ require_once dirname(__FILE__).'/include/media.inc.php';
 require_once dirname(__FILE__).'/include/users.inc.php';
 require_once dirname(__FILE__).'/include/forms.inc.php';
 require_once dirname(__FILE__).'/include/js.inc.php';
-
+require_once dirname(__FILE__).'/include/mysqli.inc.php';
 $page['title'] = _('报警联系人设置');
 $page['file'] = 'hfManageContacts.php';
 
@@ -34,7 +34,7 @@ require_once dirname(__FILE__).'/include/page_header.php';
 $themes = array_keys(Z::getThemes());
 $themes[] = THEME_DEFAULT;
 
-$mysqli = new mysqli("127.0.0.1","root","root","zabbix");
+$mysqli = new Zmysqli();
 if($mysqli->connect_errno){ //连接成功errno应该为0
     $str = 'Connect Error:'.$mysqli->connect_error;
     echo $str;
@@ -91,15 +91,15 @@ $mysqli->close();
         <ul class="table-forms" id="userFormList">
             <li>
                 <div class="table-forms-td-left"><label for="name">姓名</label></div>
-                <div class="table-forms-td-right"><input type="text" id="name" name="name" value="" maxlength="255" style="width: 300px;" autofocus="autofocus"></div>
+                <div class="table-forms-td-right"><input type="text" id="name" name="name" value="" maxlength="255" style="width: 300px;" autofocus="autofocus">&nbsp;&nbsp;必填</div>
             </li>
             <li>
                 <div class="table-forms-td-left"><label for="email">邮箱</label></div>
-                <div class="table-forms-td-right"><input type="text" id="email" name="email" value="" maxlength="255" style="width: 300px;" autofocus="autofocus"></div>
+                <div class="table-forms-td-right"><input type="text" id="email" name="email" value="" maxlength="255" style="width: 300px;" autofocus="autofocus">&nbsp;&nbsp;必填</div>
             </li>
             <li>
                 <div class="table-forms-td-left"><label for="phone">电话</label></div>
-                <div class="table-forms-td-right"><input type="text" id="phone" name="phone" value="" maxlength="255" style="width: 300px;" autofocus="autofocus"></div>
+                <div class="table-forms-td-right"><input type="text" id="phone" name="phone" value="" maxlength="255" style="width: 300px;" autofocus="autofocus">&nbsp;&nbsp;必填</div>
             </li>
             <li>
                 <div class="table-forms-td-left"><label for="comment">备注</label></div>
@@ -127,29 +127,28 @@ $mysqli->close();
         var addForm = document.getElementById("addForm");
         addForm.show();
     }
+
     //执行添加联系人操作
     function addSubmit() {
         var name = document.getElementById("name").value;
         var email = document.getElementById("email").value;
         var phone = document.getElementById("phone").value;
         var comment = document.getElementById("comment").value;
+        //检查必填字段
+        if(name == '' || email == '' || phone == ''){
+            alert("请检查必填字段是否已填写");
+            return false;
+        }
         var param = "cmd=addContact&name="+name+"&email="+email+"&phone="+phone+"&comment="+comment;
         ajaxFun(param);
     }
-    //显示修改联系人表单
-    function updateContact(id) {
-        var addLink = document.getElementById("addLink");
-        addLink.hide();
-        var contactList = document.getElementById("contactList");
-        contactList.hide();
-        var addForm = document.getElementById("addForm");
-        addForm.show();
-    }
+
     //删除联系人操作
     function delContact(id) {
         var param = "cmd=delContact&id="+id;
         ajaxFun(param);
     }
+
     //取消添加/修改联系人表单
     function cancelForm() {
         var addForm = document.getElementById("addForm");
@@ -159,6 +158,7 @@ $mysqli->close();
         var contactList = document.getElementById("contactList");
         contactList.show();
     }
+
     //执行ajax请求
     function ajaxFun(param) {
         //发送ajax请求
@@ -176,8 +176,20 @@ $mysqli->close();
         {
             if (xmlhttp.readyState==4 && xmlhttp.status==200)
             {
-                responseText=xmlhttp.responseText;
-                location.reload();
+                var responseNum=xmlhttp.responseText;
+                if(responseNum == 1){
+                    location.reload();
+                    return;
+                }
+                if(responseNum == -1){
+                    alert("请检查必填字段是否已填写");
+                    return;
+                }
+                if(responseNum == -2){
+                    alert("姓名重复，请修改后重试");
+                    return;
+                }
+                alert(responseNum);
             }
         }
         xmlhttp.open("POST","hfAjaxFunction.php",true);

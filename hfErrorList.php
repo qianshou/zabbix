@@ -25,7 +25,7 @@ require_once dirname(__FILE__).'/include/media.inc.php';
 require_once dirname(__FILE__).'/include/users.inc.php';
 require_once dirname(__FILE__).'/include/forms.inc.php';
 require_once dirname(__FILE__).'/include/js.inc.php';
-
+require_once dirname(__FILE__).'/include/mysqli.inc.php';
 $page['title'] = _('错误信息列表');
 $page['file'] = 'hfErrorList.php';
 
@@ -34,7 +34,7 @@ require_once dirname(__FILE__).'/include/page_header.php';
 $themes = array_keys(Z::getThemes());
 $themes[] = THEME_DEFAULT;
 
-$mysqli = new mysqli("127.0.0.1","root","root","zabbix");
+$mysqli = new Zmysqli();
 if($mysqli->connect_errno){ //连接成功errno应该为0
     $str = 'Connect Error:'.$mysqli->connect_error;
     echo $str;
