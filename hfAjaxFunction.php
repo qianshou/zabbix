@@ -97,11 +97,11 @@ if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'addWebsite'){
         $client_name = $_REQUEST['client_name'];
     }
     //检查必填字段是否填写
-    if($client_id && $client_name){
+    if(!($client_id && $client_name)){
         echo -1;exit;
     }
     //检查收集站名称是否重复
-    if(checkWebsiteName($client_name)){
+    if(!checkWebsiteName($client_name)){
         echo -2;exit;
     }
     if(isset($_REQUEST['comment']) && !empty($_REQUEST['comment'])){
@@ -112,14 +112,30 @@ if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'addWebsite'){
         writeText('Connect Error:'.$mysqli->connect_error);
     }
     $mysqli->set_charset('utf8');
+    //插入收集站
     $prepare_sql = "INSERT INTO `hf_manageWebsite`(`client_id`,`client_name`,`comment`) VALUES (?,?,?)";
     $mysqli_stmt = $mysqli->prepare($prepare_sql);
-    $mysqli_stmt->bind_param("sss",$client_name,$client_name,$comment);
+    $mysqli_stmt->bind_param("sss",$client_id,$client_name,$comment);
     if($mysqli_stmt->execute()){
         echo 1;
     }
     $mysqli_stmt->free_result();
+
+    //更新redis中的收集站信息
+    $client_id_array = array();
+    $mysqli_result = $mysqli->query("SELECT client_id FROM hf_manageWebsite");
+    while ($row = $mysqli_result->fetch_assoc()){
+        $client_id_array[] = $row['client_id'];
+    }
+    $mysqli_result->free_result();
     $mysqli->close();
+    //更新redis中的信息
+    $redis = new Redis();
+    if($redis->connect('127.0.0.1', 6379) && $redis->auth("hfcasnic")){
+        $redis->set("client_id",json_encode($client_id_array));
+    }else{
+        writeText("redis打开失败");
+    }
     exit;
 }
 
@@ -139,10 +155,25 @@ if(isset($_REQUEST['cmd']) && $_REQUEST['cmd'] == 'delWebsite'){
     $mysqli_stmt = $mysqli->prepare($prepare_sql);
     $mysqli_stmt->bind_param("i",$id);
     if($mysqli_stmt->execute()){
-        echo "ok";
+        echo 1;
     }
     $mysqli_stmt->free_result();
+
+    //更新redis中的收集站信息
+    $client_id_array = array();
+    $mysqli_result = $mysqli->query("SELECT client_id FROM hf_manageWebsite");
+    while ($row = $mysqli_result->fetch_assoc()){
+        $client_id_array[] = $row['client_id'];
+    }
+    $mysqli_result->free_result();
     $mysqli->close();
+    //更新redis中的信息
+    $redis = new Redis();
+    if($redis->connect('127.0.0.1', 6379) && $redis->auth("hfcasnic")){
+        $redis->set("client_id",json_encode($client_id_array));
+    }else{
+        writeText("redis打开失败");
+    }
     exit;
 }
 

@@ -7,7 +7,8 @@
  */
 require_once 'mailto.php';
 require_once dirname(__FILE__).'/include/mysqli.inc.php';
-$errorList = array();
+ini_set('default_socket_timeout', -1);  //不超时
+
 //从队列取出错误信息
 $redis = new Redis();
 if($redis->connect('127.0.0.1', 6379) && $redis->auth("hfcasnic")){
@@ -19,53 +20,58 @@ if($redis->connect('127.0.0.1', 6379) && $redis->auth("hfcasnic")){
 //错误信息错误函数
 function handleFunction($redis, $chan, $msg){
     $errorItem = json_decode($msg,true);
-    $level = $errorItem['level'];
+    $level = intval($errorItem['level']);
     $client_id = $errorItem['client_id'];
     $msg = $errorItem['msg'];
     $stime = $errorItem['stime'];
-    //短信、邮件报警
-    $report_level = array('fatal');
-    if(in_array($level,$report_level)){
-        //获取邮件收件人，短信收件人
-        $mysqli = new Zmysqli();
-        if($mysqli->connect_errno){ //连接成功errno应该为0
-            writeText('Connect Error:'.$mysqli->connect_error);
-        }
-        $mysqli->set_charset('utf8');
-        $mysql_result = $mysqli->query("SELECT * FROM `hf_alert_setting` WHERE `item` IN ('email','message')");
-        $item = array();
-        while ($row = $mysql_result->fetch_assoc()){
-            $item[$row['item']] = $row['value'];
-        }
-        $mailto = $item['email'];
-        $smsto = $item['message'];
-        $mysql_result->free();
-        $mysqli->close();
-        //发送邮件、短信
-        $err_msg = '';
-        $err_msg .= "来源ID：".$client_id."<br/>";
-        $err_msg .= "错误等级：".$level."<br/>";
-        $err_msg .= "发生时间：".date("Y-m-d H-i-s",$stime)."<br/>";
-        $err_msg .= "错误详细:".$msg."<br/>";
-        $subject = "错误收集接口报警";
-        sendmailto($mailto,$subject,$err_msg);
-        writeText("mailto ".$mailto);
-        writeText("send message to ".$smsto);
-    }
-    //写入mysql数据库
+    $id = $errorItem['id'];
+
+    //查询client_id是否存在报警规则
     $mysqli = new Zmysqli();
     if($mysqli->connect_errno){ //连接成功errno应该为0
         writeText('Connect Error:'.$mysqli->connect_error);
     }
     $mysqli->set_charset('utf8');
-    $prepare_sql = "INSERT INTO `hf_collected_error`(`occur_time`,`client_id`,`level`,`msg`,`mail`,`sms`,`handle_time`,`finished`) VALUES (?,?,?,?,?,?,?,?)";
-    $mysqli_stmt = $mysqli->prepare($prepare_sql);
+    $sql = "SELECT a.*,b.email,b.sms FROM `hf_alert_setting` AS a INNER JOIN `hf_manageContacts` AS b ON a.contact_name=b.name AND a.client_id='$client_id'";
+    writeText($sql);
+    $mysql_result = $mysqli->query($sql);
+    $mail_total = array();
+    $sms_total = array();
+    while ($rule = $mysql_result->fetch_assoc()){
+        //对每条规则进行操作
+        //判断是否需要发送邮件
+        if($rule['sendmail'] == 1 && $level <= $rule['maillevel']){
+            //执行发送邮件的操作
+            writeText("mailto ".$rule['email']);
+            $mail_total[] = $rule['contact_name'];
+            $subject = "错误收集接口报警";
+            $err_msg = '';
+            $err_msg .= "来源ID：".$client_id."<br/>";
+            $err_msg .= "错误等级：".$level."<br/>";
+            $err_msg .= "发生时间：".date("Y-m-d H-i-s",$stime)."<br/>";
+            $err_msg .= "错误详细:".$msg."<br/>";
+            sendmailto($rule['email'],$subject,$err_msg);
+        }
+        //判断是否需要发送短信
+        if($rule['sendsms'] == 1 && $level <= $rule['smslevel']){
+            //执行发送短信操作
+            $sms_total[] = $rule['contact_name'];
+            writeText("send sms to ".$rule['sms']);
+        }
+    }
+    $mysql_result->free();
+    //更新数据库
+    $prepare_sql = "UPDATE `hf_collected_error` SET `mail`=? , `sms`=? , `handle_time`=? , `finished`=? WHERE `id`=?";
+    $mail_json = json_encode($mail_total);
+    $sms_json = json_encode($sms_total);
+    $handle_date = date("Y-m-d H-i-s");
     $finished = 1;
-    $mysqli_stmt->bind_param("sssssssi",date("Y-m-d H-i-s",$stime),$client_id,$level,$msg,$mailto,$smsto,date("Y-m-d H-i-s"),$finished);
-    if($mysqli_stmt->execute()){
-        $id = $mysqli_stmt->insert_id;
-    }else{
-        writeText("Insert Error:".date("Y-m-d H-i-s",$stime).",$client_id,$level,$msg");
+    $real_sql = "UPDATE `hf_collected_error` SET `mail`='$mail_json' , `sms`='$sms_json' , `handle_time`='$handle_date' , `finished`=$finished WHERE `id`=$id";
+    writeText($real_sql);
+    $mysqli_stmt = $mysqli->prepare($prepare_sql);
+    $mysqli_stmt->bind_param("sssii",$mail_json,$sms_json,$handle_date,$finished,$id);
+    if(!$mysqli_stmt->execute()){
+        writeText("Update Error:$client_id,$level,$msg");
     }
     $mysqli->close();
 }
@@ -73,5 +79,5 @@ function handleFunction($redis, $chan, $msg){
 function writeText($str){
     $content = date("Y-m-d H:i:s");
     $content = "[".$content."]".$str."\r\n";
-    file_put_contents("/var/log/errorHandler.log",$content,FILE_APPEND);
+    file_put_contents("/var/log/hfErrorHandler.log",$content,FILE_APPEND);
 }

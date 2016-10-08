@@ -45,8 +45,6 @@ $item = array();
 while($row = $mysql_result->fetch_assoc()){
     $rows[] = $row;
 }
-$mysql_result->free();
-$mysqli->close();
 ?>
 <div class="header-title table">
     <div class="cell">
@@ -61,10 +59,10 @@ $mysqli->close();
             <th style="width: 8%">发生时间</th>
             <th style="width: 6%">错误来源</th>
             <th>错误信息</th>
-            <th style="width: 5%">已处理</th>
+            <th style="width: 5%">是否处理</th>
             <th style="width: 8%">处理时间</th>
-            <th style="width: 10%">发送邮件</th>
-            <th style="width: 10%">发送短信</th>
+            <th style="width: 15%">发送邮件</th>
+            <th style="width: 15%">发送短信</th>
         </tr>
         </thead>
         <tbody>
@@ -72,23 +70,33 @@ $mysqli->close();
             foreach ($rows as $item){
                 echo "<tr>";
                 switch ($item['level']){
-                    case 'error':
+                    case 1:
                         echo "<td class='high-bg'>错误</td>";
                         break;
-                    case "warning":
+                    case 2:
                         echo "<td class='average-bg'>警告</td>";
                         break;
-                    default:
+                    case 3:
                         echo "<td class='info-bg'>通知</td>";
                         break;
                 }
                 echo "<td>".$item['occur_time']."</td>";
                 echo "<td>".$item['client_id']."</td>";
                 echo "<td><pre>".$item['msg']."</pre></td>";
-                echo "<td>".$item['finished']."</td>";
+                echo "<td>";
+                echo ($item['finished'] == 1)? "是":"否";
+                echo "</td>";
                 echo "<td>".$item['handle_time']."</td>";
-                echo "<td>".$item['mail']."</td>";
-                echo "<td>".$item['sms']."</td>";
+                echo "<td>";
+                if(!empty($item['mail'])){
+                    echo implode(json_decode($item['mail'],true),",");
+                }
+                echo "</td>";
+                echo "<td>";
+                if(!empty($item['sms'])){
+                    echo implode(json_decode($item['sms'],true),",");
+                }
+                echo "</td>";
                 echo "</tr>";
             }
         ?>
