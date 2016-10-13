@@ -18,14 +18,9 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-
 require_once dirname(__FILE__).'/include/config.inc.php';
-require_once dirname(__FILE__).'/include/triggers.inc.php';
-require_once dirname(__FILE__).'/include/media.inc.php';
-require_once dirname(__FILE__).'/include/users.inc.php';
-require_once dirname(__FILE__).'/include/forms.inc.php';
-require_once dirname(__FILE__).'/include/js.inc.php';
 require_once dirname(__FILE__).'/include/mysqli.inc.php';
+
 $page['title'] = _('错误报警设置');
 $page['file'] = 'hfAlertSeting.php';
 
@@ -41,7 +36,7 @@ if($mysqli->connect_errno){ //连接成功errno应该为0
 }
 $mysqli->set_charset('utf8');
 //查询已有报警配置
-$mysql_result = $mysqli->query("SELECT a.id ,a.client_id,w.client_name,a.contact_name,a.sendmail,a.maillevel,a.smslevel,a.sendsms,c.email,c.sms FROM hf_alert_setting AS a INNER JOIN hf_manageContacts AS c ON a.contact_name=c.name INNER JOIN hf_manageWebsite AS w ON a.client_id=w.client_id");
+$mysql_result = $mysqli->query("SELECT * FROM hf_alert_setting");
 $rows = array();
 while($row = $mysql_result->fetch_assoc()){
     $rows[] = $row;
@@ -55,7 +50,7 @@ while($row = $mysql_result->fetch_assoc()){
 }
 $mysql_result->free();
 //查询所有联系人
-$mysql_result = $mysqli->query("SELECT name FROM hf_manageContacts");
+$mysql_result = $mysqli->query("SELECT id,name FROM hf_manageContacts");
 $contacts_rows = array();
 while($row = $mysql_result->fetch_assoc()){
     $contacts_rows[] = $row;
@@ -73,6 +68,16 @@ $level_map = array();
 foreach ($level_rows as $row){
     $level_map[$row['level_num']] = $row['level_name'];
 }
+//联系人信息映射
+$contacts_map = array();
+foreach ($contacts_rows as $row){
+    $contacts_map[$row['id']] = $row['name'];
+}
+//收集站信息映射
+$website_map = array();
+foreach ($website_rows as $row){
+    $website_map[$row['client_id']] = $row['client_name'];
+}
 ?>
 <div class="header-title table">
     <div class="cell">
@@ -87,11 +92,13 @@ foreach ($level_rows as $row){
             <th>ID</th>
             <th>收集站编号</th>
             <th>收集站名称</th>
-            <th>联系人姓名</th>
+            <th>联系人列表</th>
             <th>是否发送邮件</th>
-            <th>邮件错误级别</th>
+            <th>邮件报警次数</th>
+            <th>邮件报警级别</th>
             <th>是否发送短信</th>
-            <th>短信错误级别</th>
+            <th>短信报警次数</th>
+            <th>短信报警级别</th>
             <th>删除</th>
         </tr>
         </thead>
@@ -103,25 +110,34 @@ foreach ($level_rows as $row){
             echo "<tr id='".$item['id']."'>";
             echo "<td class='id'>".$id."</td>";
             echo "<td class='client_id'>".$item['client_id']."</td>";
-            echo "<td class='client_name'>".$item['client_name']."</td>";
-            echo "<td class='contact_name'>".$item['contact_name']."</td>";
+            echo "<td class='client_name'>".$website_map[$item['client_id']]."</td>";
+            echo "<td class='contact_name'>";
+            $tmp_arr = explode(",",$item['contact_id']);
+            $contact_name_list = array();
+            foreach ($tmp_arr as $id){
+                $contact_name_list[] = $contacts_map[$id];
+            }
+            echo implode(",",$contact_name_list);
+            echo "</td>";
             echo "<td class='sendmail'>";
             if($item['sendmail'] == 1){
-                echo "是（".$item['email']."）";
+                echo "是";
             }elseif ($item['sendmail'] == 0){
                 echo "否";
             }
             echo "</td>";
+            echo "<td class='mailtimes'>".$item['mailtimes']."</td>";
             echo "<td class='maillevel'>";
             echo ($item['maillevel']!=0)? $level_map[$item['maillevel']]:"未设置";
             echo "</td>";
             echo "<td class='sendsms'>";
             if($item['sendsms'] == 1){
-                echo "是（".$item['sms']."）";
+                echo "是";
             }elseif ($item['sendsms'] == 0){
                 echo "否";
             }
             echo "</td>";
+            echo "<td class='smstimes'>".$item['smstimes']."</td>";
             echo "<td class='smslevel'>";
             echo ($item['smslevel']!=0)? $level_map[$item['smslevel']]:"未设置";
             echo "</td>";
@@ -150,10 +166,10 @@ foreach ($level_rows as $row){
             <li>
                 <div class="table-forms-td-left"><label for="contact">选择联系人</label></div>
                 <div class="table-forms-td-right">
-                    <select name="contact" id="contact"  style="width: 300px;">
+                    <select name="contact" id="contact"  style="width: 300px;" multiple="multiple">
                         <?php
                         foreach ($contacts_rows as $contact){
-                            echo "<option value=\"".$contact['name']."\">".$contact['name']."</option>";
+                            echo "<option value=\"".$contact['id']."\">".$contact['name']."</option>";
                         }
                         ?>
                     </select>
@@ -164,7 +180,14 @@ foreach ($level_rows as $row){
                 <div class="table-forms-td-right">
                     <p>
                         <input type="checkbox" value="email" id="email" onclick="javascript:mailFun(this)"/>&nbsp;&nbsp;发送邮件
-                        <select name="maillevel" id="maillevel"  style="width: 100px;margin-left: 30px;" disabled="disabled">
+                        <select name="mailtimes" id="mailtimes"  style="width: 100px;margin-left: 30px;" disabled="disabled">
+                            <option value="1">发送一次</option>
+                            <option value="2">发送二次</option>
+                            <option value="3">发送三次</option>
+                            <option value="4">发送四次</option>
+                            <option value="5">发送五次</option>
+                        </select>
+                        <select name="maillevel" id="maillevel"  style="width: 100px; margin-left: 30px;" disabled="disabled">
                             <?php
                                 foreach ($level_rows as $level){
                                     echo " <option value=\"".$level['level_num']."\">".$level['level_name']."</option>";
@@ -174,6 +197,13 @@ foreach ($level_rows as $row){
                     </p>
                     <p>
                         <input type="checkbox" value="sms" id="sms" onclick="javascript:smsFun(this)"/>&nbsp;&nbsp;发送短信
+                        <select name="smstimes" id="smstimes"  style="width: 100px;margin-left: 30px;" disabled="disabled">
+                            <option value="1">发送一次</option>
+                            <option value="2">发送二次</option>
+                            <option value="3">发送三次</option>
+                            <option value="4">发送四次</option>
+                            <option value="5">发送五次</option>
+                        </select>
                         <select name="smslevel" id="smslevel"  style="width: 100px;margin-left: 30px;" disabled="disabled">
                             <?php
                             foreach ($level_rows as $level){
@@ -199,20 +229,26 @@ foreach ($level_rows as $row){
     function mailFun(obj) {
         var tag = obj.checked;
         var maillevel = document.getElementById("maillevel");
+        var mailtimes = document.getElementById("mailtimes");
         if(tag == true){
             maillevel.removeAttribute("disabled");
+            mailtimes.removeAttribute("disabled");
         }else{
             maillevel.setAttribute("disabled","disabled");
+            mailtimes.setAttribute("disabled","disabled");
         }
     }
     //设置发送短信错误等级
     function smsFun(obj) {
         var tag = obj.checked;
         var smslevel = document.getElementById("smslevel");
+        var smstimes = document.getElementById("smstimes");
         if(tag == true){
             smslevel.removeAttribute("disabled");
+            smstimes.removeAttribute("disabled");
         }else{
             smslevel.setAttribute("disabled","disabled");
+            smstimes.setAttribute("disabled","disabled");
         }
     }
     //显示添加设置表单
@@ -226,29 +262,42 @@ foreach ($level_rows as $row){
     }
     //执行添加设置操作
     function addSubmit() {
+        //获取收集站id
         var wobj = document.getElementById("website");
         var windex = wobj.selectedIndex;
         var website = wobj.options[windex].value;
-        var cobj = document.getElementById("contact");
-        var cindex = cobj.selectedIndex;
-        var contact = cobj.options[cindex].value;
+        //获取联系人姓名
+        var cval = jQuery("#contact").val();
+        if(cval == null){
+            alert('报警联系人不能为空');
+        }else{
+            var contact = cval.join(',');
+        }
         var sendmail = 0;
         var maillevel = 0;
+        var mailtimes = 0;
         if(document.getElementById("email").checked){
             sendmail = 1;
             var obj = document.getElementById("maillevel")
             var index = obj.selectedIndex;
             maillevel = obj.options[index].value;
+            obj = document.getElementById("mailtimes")
+            index = obj.selectedIndex;
+            mailtimes = obj.options[index].value;
         }
         var sendsms = 0;
         var smslevel = 0;
+        var smstimes = 0;
         if(document.getElementById("sms").checked){
             sendsms = 1;
             var obj = document.getElementById("smslevel")
             var index = obj.selectedIndex;
             smslevel = obj.options[index].value;
+            obj = document.getElementById("smstimes")
+            index = obj.selectedIndex;
+            smstimes = obj.options[index].value;
         }
-        var param = "cmd=addSetting&website="+website+"&contact="+contact+"&sendmail="+sendmail+"&maillevel="+maillevel+"&sendsms="+sendsms+"&smslevel="+smslevel;
+        var param = "cmd=addSetting&website="+website+"&contact="+contact+"&sendmail="+sendmail+"&mailtimes="+mailtimes+"&maillevel="+maillevel+"&sendsms="+sendsms+"&smslevel="+smslevel+"&smstimes="+smstimes;
         //console.log(param);
         ajaxFun(param);
     }
@@ -284,8 +333,11 @@ foreach ($level_rows as $row){
             if (xmlhttp.readyState==4 && xmlhttp.status==200)
             {
                 responseText=xmlhttp.responseText;
+                if(responseText == -3){
+                    alert('该收集站已有报警规则');
+                    return;
+                }
                 location.reload();
-                console.log(responseText);
             }
         }
         xmlhttp.open("POST","hfAjaxFunction.php",true);

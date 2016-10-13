@@ -18,14 +18,9 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-
 require_once dirname(__FILE__).'/include/config.inc.php';
-require_once dirname(__FILE__).'/include/triggers.inc.php';
-require_once dirname(__FILE__).'/include/media.inc.php';
-require_once dirname(__FILE__).'/include/users.inc.php';
-require_once dirname(__FILE__).'/include/forms.inc.php';
-require_once dirname(__FILE__).'/include/js.inc.php';
 require_once dirname(__FILE__).'/include/mysqli.inc.php';
+
 $page['title'] = _('报警联系人设置');
 $page['file'] = 'hfManageContacts.php';
 
@@ -149,7 +144,7 @@ $mysqli->close();
         ajaxFun(param);
     }
 
-    //取消添加/修改联系人表单
+    //取消联系人表单
     function cancelForm() {
         var addForm = document.getElementById("addForm");
         addForm.hide();

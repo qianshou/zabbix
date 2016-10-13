@@ -309,7 +309,11 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
             'pages' => [
                 [
                     'url' => 'hfErrorList.php',
-                    'label' => _('错误信息列表')
+                    'label' => _('未解决错误列表')
+                ],
+                [
+                    'url' => 'hfHandledErrorList.php',
+                    'label' => _('已解决错误列表')
                 ],
                 [
                     'url' => 'hfAlertSeting.php',
