@@ -322,10 +322,10 @@ function sendmailto($mailto, $mailsub, $mailbd)
     //##########################################
     $smtpserver     = "smtp.163.com"; //SMTP服务器
     $smtpserverport = 25; //SMTP服务器端口
-    $smtpusermail   = "koastal@163.com"; //SMTP服务器的用户邮箱
+    $smtpusermail   = "XXXXX@163.com"; //SMTP服务器的用户邮箱
     $smtpemailto    = $mailto;
-    $smtpuser       = "koastal@163.com"; //SMTP服务器的用户帐号
-    $smtppass       = "liuli521"; //SMTP服务器的用户密码
+    $smtpuser       = "XXXXXX@163.com"; //SMTP服务器的用户帐号
+    $smtppass       = "XXXXXX"; //SMTP服务器的用户密码
     $mailsubject    = $mailsub; //邮件主题
     $mailsubject    = "=?UTF-8?B?" . base64_encode($mailsubject) . "?="; //防止乱码
     $mailbody       = $mailbd; //邮件内容
